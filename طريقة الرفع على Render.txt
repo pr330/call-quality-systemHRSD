@@ -1,0 +1,50 @@
+خطوات رفع النظام على Render:
+
+1) افتحي GitHub:
+https://github.com
+
+2) سجلي دخولك.
+
+3) اضغطي New repository.
+اسم المستودع:
+call-quality-system
+
+4) ارفعي ملفات هذا المجلد كامل إلى GitHub.
+
+5) افتحي Render:
+https://render.com
+
+6) سجلي دخولك بحساب Google أو GitHub.
+
+7) اضغطي:
+New + 
+ثم:
+Web Service
+
+8) اختاري مستودع GitHub:
+call-quality-system
+
+9) الإعدادات:
+Name: call-quality-system
+Environment: Node
+Build Command: npm install
+Start Command: npm start
+
+10) اضغطي:
+Create Web Service
+
+بعدها Render يعطيك رابط مثل:
+https://call-quality-system.onrender.com
+
+مهم لإرسال الإيميلات:
+داخل Render روحي إلى Environment وأضيفي:
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=s.alwasel@edraakcm.sa
+SMTP_PASS=App Password من Google
+MAIL_FROM=s.alwasel@edraakcm.sa
+SYSTEM_URL=رابط Render النهائي
+
+ملاحظة:
+بعد ما يطلع رابط Render، لازم تغيرين SYSTEM_URL إلى نفس الرابط النهائي عشان يوصل للموظف في الإيميل.

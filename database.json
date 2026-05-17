@@ -1,0 +1,11 @@
+{
+  "users": [
+    {
+      "email": "s.alwasel@edraakcm.sa",
+      "password": "Ss@123123",
+      "name": "مدير النظام",
+      "role": "admin"
+    }
+  ],
+  "evaluations": []
+}
