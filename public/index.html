@@ -1,11 +1,662 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>نظام تقييم جودة المكالمات</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام تقييم جودة المكالمات</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{font-family:'IBM Plex Sans Arabic',sans-serif;background:radial-gradient(circle at top right,rgba(11,123,107,.09),transparent 35%),radial-gradient(circle at bottom left,rgba(212,160,23,.08),transparent 30%),#f0f7f5}
+.hidden-page{display:none!important}.card{background:#fff;border:1px solid #e5eee9;border-radius:22px;box-shadow:0 10px 30px rgba(11,123,107,.07)}
+.btn{border-radius:13px;padding:10px 18px;font-weight:800;transition:.2s}.btn-primary{background:#0b7b6b;color:#fff}.btn-gold{background:#d4a017;color:#fff}
+.option{border:2px solid #d1d5db;border-radius:10px;padding:7px 16px;font-weight:800;cursor:pointer;background:#fff}
+.option.active-yes{background:#0b7b6b;color:#fff;border-color:#0b7b6b}.option.active-no{background:#dc2626;color:#fff;border-color:#dc2626}.option.active-na{background:#6b7280;color:#fff;border-color:#6b7280}
+input,select,textarea{font-family:inherit}.q-card{border:1px solid #e5eee9;border-radius:14px;padding:16px;margin-bottom:12px;background:#fff}
+.toast{position:fixed;bottom:20px;left:20px;background:#0b7b6b;color:#fff;padding:12px 18px;border-radius:12px;font-weight:800;z-index:99}.stat{background:linear-gradient(135deg,#fff,#f7fbfa);border:1px solid #e5eee9;border-radius:18px;padding:18px}.stat h3{word-break:break-word}.metric-input{background:#fff}
+.badge{display:inline-flex;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800}.badge-admin{background:#fdf6e3;color:#9a6a00}.badge-qa{background:#e0f5f1;color:#0b7b6b}
+.bar{height:12px;border-radius:999px;background:#e5e7eb;overflow:hidden}.bar span{display:block;height:100%;background:#0b7b6b}
+</style>
 </head>
-<body style="font-family:Arial;text-align:center;padding:50px">
-  <h1>نظام تقييم جودة المكالمات يعمل بنجاح 🎉</h1>
+<body>
+<header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-emerald-100">
+<div class="max-w-7xl mx-auto p-4 flex justify-between items-center">
+<div><p class="text-xs font-bold text-emerald-700">نظام داخلي خاص</p><h1 class="text-xl font-extrabold text-gray-800">نظام تقييم جودة المكالمات</h1></div>
+<div id="userBox" class="hidden-page flex gap-3 items-center"><span id="roleBadge" class="badge"></span><span id="currentUser" class="text-sm font-bold text-gray-600"></span><button onclick="logout()" class="btn bg-gray-100 text-gray-700">تسجيل خروج</button></div>
+</div>
+</header>
+
+<main class="max-w-7xl mx-auto p-4 pb-16">
+<section id="loginPage" class="min-h-[75vh] flex items-center justify-center">
+<div class="card w-full max-w-md p-8">
+<h2 class="text-2xl font-extrabold text-gray-800 mb-2">تسجيل الدخول</h2>
+<p class="text-sm text-gray-500 mb-6">يسمح فقط ببريد @hrsd.gov.sa أو @edraakcm.sa</p>
+
+<div class="mb-4">
+<label class="block text-sm font-bold text-gray-700 mb-2">البريد الإلكتروني</label>
+<input id="loginEmail" oninput="validateLoginEmail()" type="email" class="w-full border rounded-xl p-3" placeholder="example@domain.com" dir="ltr">
+<p id="emailDomainError" class="text-red-600 text-xs mt-2 hidden-page">Only @hrsd.gov.sa or @edraakcm.sa emails are allowed.</p>
+</div>
+
+<div class="mb-5">
+<label class="block text-sm font-bold text-gray-700 mb-2">كلمة المرور</label>
+<input id="loginPass" type="password" class="w-full border rounded-xl p-3" placeholder="••••••••" dir="ltr">
+</div>
+
+<button onclick="login()" class="btn btn-primary w-full">دخول</button>
+</div>
+</section>
+
+<section id="appPage" class="hidden-page">
+<div class="grid md:grid-cols-4 gap-4 mb-5">
+<button onclick="showTab('dashboard')" id="btnDashboard" class="card p-5 text-right hover:border-emerald-500 hidden-page"><h3 class="font-extrabold text-lg">اللوحة التفاعلية والتقييمات</h3><p class="text-sm text-gray-500">كل التقييمات والإحصائيات</p></button>
+<button onclick="showTab('accounts')" id="btnAccounts" class="card p-5 text-right hover:border-emerald-500 hidden-page"><h3 class="font-extrabold text-lg">إدارة الحسابات</h3><p class="text-sm text-gray-500">إضافة موظفين ومشرفين</p></button>
+<button onclick="showTab('form')" id="btnForm" class="card p-5 text-right hover:border-emerald-500 hidden-page"><h3 class="font-extrabold text-lg">تقييم جديد</h3><p class="text-sm text-gray-500">تعبئة استبيان جودة مكالمة</p></button>
+<button onclick="showTab('my')" id="btnMy" class="card p-5 text-right hover:border-emerald-500 hidden-page"><h3 class="font-extrabold text-lg">تقييماتي</h3><p class="text-sm text-gray-500">تقييمات الحساب الحالي</p></button>
+
+<button onclick="exportCSV()" class="card p-5 text-right hover:border-emerald-500"><h3 class="font-extrabold text-lg">تصدير Excel</h3><p class="text-sm text-gray-500">تحميل CSV</p></button>
+</div>
+
+<div id="formTab" class="card p-6">
+<h2 class="text-xl font-extrabold mb-2">نموذج تقييم جودة المكالمة</h2><p class="text-sm text-gray-500 mb-5">عبّي بيانات المكالمة وأسئلة الجودة فقط، والمؤشرات في اللوحات تُحسب تلقائيًا من التقييم.</p>
+<div class="grid md:grid-cols-2 gap-4 mb-6">
+<div><label class="text-sm font-bold">الفرع</label><select id="branch" class="w-full border rounded-xl p-3 mt-1"></select></div>
+<div><label class="text-sm font-bold">اسم الموظف المراد تقييمه</label><input id="employeeName" class="w-full border rounded-xl p-3 mt-1" placeholder="اسم الموظف"></div>
+<div><label class="text-sm font-bold">البريد الإلكتروني للموظف</label><input id="employeeEmail" class="w-full border rounded-xl p-3 mt-1" placeholder="employee@company.com" dir="ltr"></div>
+<div><label class="text-sm font-bold">رابط تسجيل المكالمة</label><input id="callLink" class="w-full border rounded-xl p-3 mt-1" placeholder="https://" dir="ltr"></div>
+</div>
+
+<div id="questionsBox"></div>
+<div class="mt-5"><label class="text-sm font-bold">الملاحظات والتوصيات</label><textarea id="notes" rows="4" class="w-full border rounded-xl p-3 mt-1" placeholder="اكتبي الملاحظات هنا..."></textarea></div>
+<div class="mt-6 flex gap-3"><button onclick="saveEvaluation()" class="btn btn-primary">حفظ التقييم</button><button onclick="resetForm()" class="btn bg-gray-100 text-gray-700">تفريغ النموذج</button></div>
+</div>
+
+<div id="dashboardTab" class="hidden-page card p-6">
+<div class="flex flex-col md:flex-row justify-between gap-4 mb-5">
+<div><h2 class="text-xl font-extrabold">اللوحة التفاعلية</h2><p class="text-sm text-gray-500">ملخص شامل لجميع تقييمات موظفي الجودة</p></div>
+<div class="grid md:grid-cols-3 gap-3"><select id="filterBranch" onchange="renderDashboard()" class="border rounded-xl p-3"></select><select id="filterEvaluator" onchange="renderDashboard()" class="border rounded-xl p-3"><option value="">كل موظفي الجودة</option></select><button onclick="clearFilters()" class="btn bg-gray-100 text-gray-700">مسح الفلاتر</button></div>
+</div>
+<div class="grid md:grid-cols-4 xl:grid-cols-5 gap-4 mb-6">
+<div class="stat"><p class="text-sm text-gray-500">عدد الجلسات الواردة</p><h3 id="kpiIncomingSessions" class="text-2xl font-extrabold">0</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">عدد الجلسات التي تم الرد عليها</p><h3 id="kpiAnsweredSessions" class="text-2xl font-extrabold">0</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">نسبة الجلسات المفقودة</p><h3 id="kpiMissedRate" class="text-2xl font-extrabold">0%</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">متوسط زمن الرد</p><h3 id="kpiAvgResponseTime" class="text-2xl font-extrabold">0 ث</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">متوسط زمن الجلسة</p><h3 id="kpiAvgSessionTime" class="text-2xl font-extrabold">0 د</h3></div>
+
+<div class="stat"><p class="text-sm text-gray-500">رضا العملاء</p><h3 id="kpiCustomerSatisfaction" class="text-2xl font-extrabold">0%</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">مؤشر صافي رضا العملاء</p><h3 id="kpiNps" class="text-2xl font-extrabold">0</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">حجم الضغط على الفرع</p><h3 id="kpiBranchPressure" class="text-2xl font-extrabold">0%</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">كفاءة الاستجابة</p><h3 id="kpiResponseEfficiency" class="text-2xl font-extrabold">0%</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">جودة الخدمة</p><h3 id="avgScore" class="text-2xl font-extrabold">0%</h3></div>
+
+<div class="stat"><p class="text-sm text-gray-500">سرعة الرد</p><h3 id="kpiSpeedResponse" class="text-2xl font-extrabold">0%</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">كفاءة الموظفين</p><h3 id="kpiEmployeeEfficiency" class="text-2xl font-extrabold">0%</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">نسبة العملاء الذين يوصون بالخدمة</p><h3 id="kpiRecommendRate" class="text-2xl font-extrabold">0%</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">تقييم مباشر لجودة التجربة</p><h3 id="kpiDirectExperience" class="text-2xl font-extrabold">0%</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">عدد المكالمات المعالجة</p><h3 id="kpiHandledCalls" class="text-2xl font-extrabold">0</h3></div>
+
+<div class="stat"><p class="text-sm text-gray-500">نسبة الحل</p><h3 id="kpiResolutionRate" class="text-2xl font-extrabold">0%</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">نسبة التخلي عن الجلسة</p><h3 id="kpiAbandonmentRate" class="text-2xl font-extrabold">0%</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">عدد التقييمات</p><h3 id="totalCount" class="text-2xl font-extrabold">0</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">أفضل فرع</p><h3 id="bestBranch" class="text-base font-extrabold">-</h3></div>
+<div class="stat"><p class="text-sm text-gray-500">آخر تقييم</p><h3 id="lastEval" class="text-base font-extrabold">-</h3></div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-5 mb-6">
+<div class="card p-5 shadow-none"><h3 class="font-extrabold mb-4">التحديات التشغيلية</h3><div id="kpiChallenges" class="space-y-2 text-sm text-gray-700"></div></div>
+<div class="card p-5 shadow-none"><h3 class="font-extrabold mb-4">التوصيات</h3><div id="kpiRecommendations" class="space-y-2 text-sm text-gray-700"></div></div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-5 mb-6"><div class="card p-5 shadow-none"><h3 class="font-extrabold mb-4">أداء الفروع</h3><div id="branchPerformance" class="space-y-3"></div></div><div class="card p-5 shadow-none"><h3 class="font-extrabold mb-4">أداء موظفي الجودة</h3><div id="qaPerformance" class="space-y-3"></div></div></div>
+<div class="overflow-auto"><table class="w-full text-sm border"><thead class="bg-emerald-50"><tr><th class="p-3 border">التاريخ</th><th class="p-3 border">المقيّم</th><th class="p-3 border">الفرع</th><th class="p-3 border">الموظف</th><th class="p-3 border">بريد الموظف</th><th class="p-3 border">الجلسات الواردة</th><th class="p-3 border">تم الرد</th><th class="p-3 border">نسبة الحل</th><th class="p-3 border">النسبة</th><th class="p-3 border">الملاحظات</th></tr></thead><tbody id="resultsBody"></tbody></table></div>
+</div>
+
+<div id="myTab" class="hidden-page card p-6">
+<h2 class="text-xl font-extrabold mb-2">تقييماتي</h2><p class="text-sm text-gray-500 mb-5">هذه الصفحة تعرض التقييمات التي أدخلها الحساب الحالي فقط.</p>
+<div class="grid md:grid-cols-3 gap-4 mb-6"><div class="stat"><p class="text-sm text-gray-500">عدد تقييماتي</p><h3 id="myCount" class="text-2xl font-extrabold">0</h3></div><div class="stat"><p class="text-sm text-gray-500">متوسط تقييماتي</p><h3 id="myAvg" class="text-2xl font-extrabold">0%</h3></div><div class="stat"><p class="text-sm text-gray-500">آخر تقييم لي</p><h3 id="myLast" class="text-base font-extrabold">-</h3></div></div>
+<div class="overflow-auto"><table class="w-full text-sm border"><thead class="bg-emerald-50"><tr><th class="p-3 border">التاريخ</th><th class="p-3 border">الفرع</th><th class="p-3 border">الموظف</th><th class="p-3 border">النسبة</th><th class="p-3 border">الملاحظات</th></tr></thead><tbody id="myResultsBody"></tbody></table></div>
+</div>
+
+
+
+
+
+<div id="employeeTab" class="hidden-page card p-6">
+<h2 class="text-2xl font-extrabold mb-2">نموذج موظف الجلسة</h2>
+<p class="text-sm text-gray-500 mb-6">يرجى تعبئة بيانات الجلسة فقط.</p>
+
+<div class="grid md:grid-cols-2 gap-5">
+
+<div>
+<label class="font-bold text-sm">اسم المستفيد</label>
+<input type="text" class="w-full border rounded-xl p-3 mt-2" placeholder="اكتب اسم المستفيد">
+</div>
+
+<div>
+<label class="font-bold text-sm">رقم جوال المستفيد</label>
+<input type="tel" class="w-full border rounded-xl p-3 mt-2" placeholder="05xxxxxxxx" dir="ltr">
+</div>
+
+<div>
+<label class="font-bold text-sm">تاريخ الجلسة</label>
+<input type="date" class="w-full border rounded-xl p-3 mt-2">
+</div>
+
+<div>
+<label class="font-bold text-sm">رابط الجلسة</label>
+<input type="url" class="w-full border rounded-xl p-3 mt-2" placeholder="https://" dir="ltr">
+</div>
+
+<div>
+<label class="font-bold text-sm">رقم الجلسة</label>
+<input type="text" class="w-full border rounded-xl p-3 mt-2" placeholder="رقم الجلسة">
+</div>
+
+<div>
+<label class="font-bold text-sm">نوع العميل</label>
+<select class="w-full border rounded-xl p-3 mt-2">
+<option>فرد</option>
+<option>منشأة</option>
+</select>
+</div>
+
+<div>
+<label class="font-bold text-sm">نوع الخدمة المقدمة</label>
+<select id="serviceType" onchange="toggleOtherService()" class="w-full border rounded-xl p-3 mt-2">
+<option>خدمات الأفراد</option>
+<option>خدمات المنشآت</option>
+<option>خدمات التوثيق</option>
+<option>الشكاوي</option>
+<option>البلاغات</option>
+<option>أخرى</option>
+</select>
+</div>
+
+<div id="otherServiceBox" class="hidden-page">
+<label class="font-bold text-sm">حدد نوع الخدمة</label>
+<input type="text" class="w-full border rounded-xl p-3 mt-2" placeholder="اكتب نوع الخدمة">
+</div>
+
+<div>
+<label class="font-bold text-sm">اسم ممثل خدمة المستفيد</label>
+<input type="text" class="w-full border rounded-xl p-3 mt-2" placeholder="اسم الموظف">
+</div>
+
+<div>
+<label class="font-bold text-sm">الفرع الافتراضي (المنطقة)</label>
+<input type="text" class="w-full border rounded-xl p-3 mt-2" placeholder="المنطقة">
+</div>
+
+</div>
+
+<div class="mt-8">
+<button class="btn btn-primary px-10">إرسال النموذج</button>
+</div>
+</div>
+
+<div id="accountsTab" class="hidden-page card p-6">
+<h2 class="text-xl font-extrabold mb-2">إدارة الحسابات</h2>
+<p class="text-sm text-gray-500 mb-5">من هنا تضيفين وتعدلين وتحذفين حسابات موظفي الجودة والمشرفين.</p>
+
+<div class="grid md:grid-cols-5 gap-4 mb-6">
+<div><label class="text-sm font-bold">الاسم</label><input id="newUserName" class="w-full border rounded-xl p-3 mt-1" placeholder="مثال: سارة أحمد"></div>
+<div><label class="text-sm font-bold">البريد الإلكتروني</label><input id="newUserEmail" oninput="validateAccountEmail('newUserEmail', 'newUserEmailError')" class="w-full border rounded-xl p-3 mt-1" placeholder="user@company.com" dir="ltr"><p id="newUserEmailError" class="text-red-600 text-xs mt-2 hidden-page">Only @hrsd.gov.sa or @edraakcm.sa emails are allowed.</p></div>
+<div><label class="text-sm font-bold">كلمة المرور</label><input id="newUserPassword" class="w-full border rounded-xl p-3 mt-1" placeholder="123456" dir="ltr"></div>
+<div><label class="text-sm font-bold">نوع الحساب</label><select id="newUserRole" class="w-full border rounded-xl p-3 mt-1"><option value="employee">موظف جلسة</option><option value="qa">موظف الجلسة</option><option value="supervisor">مشرف جودة</option><option value="admin">مدير النظام</option></select></div>
+<div class="flex items-end"><button onclick="addUser()" class="btn btn-primary w-full">إضافة الحساب</button></div>
+</div>
+
+<div class="overflow-auto">
+<table class="w-full text-sm border">
+<thead class="bg-emerald-50">
+<tr>
+<th class="p-3 border">الاسم</th>
+<th class="p-3 border">البريد</th>
+<th class="p-3 border">الصلاحية</th>
+<th class="p-3 border">الحالة</th>
+<th class="p-3 border">إجراءات</th>
+</tr>
+</thead>
+<tbody id="usersBody"></tbody>
+</table>
+</div>
+</div>
+
+<div id="editUserModal" class="hidden-page fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+<div class="bg-white rounded-2xl p-6 w-full max-w-lg">
+<div class="flex justify-between items-center mb-5">
+<h3 class="text-lg font-extrabold">تعديل الحساب</h3>
+<button onclick="closeEditUser()" class="w-8 h-8 rounded-full bg-gray-100 font-bold">×</button>
+</div>
+
+<input id="editOldEmail" type="hidden">
+
+<div class="grid gap-4">
+<div><label class="text-sm font-bold">الاسم</label><input id="editUserName" class="w-full border rounded-xl p-3 mt-1"></div>
+<div><label class="text-sm font-bold">البريد الإلكتروني</label><input id="editUserEmail" oninput="validateAccountEmail('editUserEmail', 'editUserEmailError')" class="w-full border rounded-xl p-3 mt-1" dir="ltr"><p id="editUserEmailError" class="text-red-600 text-xs mt-2 hidden-page">Only @hrsd.gov.sa or @edraakcm.sa emails are allowed.</p></div>
+<div><label class="text-sm font-bold">كلمة المرور</label><input id="editUserPassword" class="w-full border rounded-xl p-3 mt-1" dir="ltr"></div>
+<div><label class="text-sm font-bold">نوع الحساب</label><select id="editUserRole" class="w-full border rounded-xl p-3 mt-1"><option value="employee">موظف جلسة</option><option value="qa">موظف جودة</option><option value="supervisor">مشرف جودة</option><option value="admin">مدير النظام</option></select></div>
+<label class="flex items-center gap-2 font-bold text-sm"><input id="editUserDisabled" type="checkbox"> تعطيل الحساب</label>
+</div>
+
+<div class="flex gap-3 mt-6">
+<button onclick="saveEditUser()" class="btn btn-primary">حفظ التعديل</button>
+<button onclick="closeEditUser()" class="btn bg-gray-100 text-gray-700">إلغاء</button>
+</div>
+</div>
+</div>
+
+
+</section>
+</main>
+
+<script>
+let currentUser = JSON.parse(localStorage.getItem('cq_user') || 'null');
+let meta = { branches: [], questions: {} };
+let answers = {};
+
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
+async function api(path, opts={}) {
+  opts.headers = opts.headers || {};
+  opts.headers['Content-Type'] = 'application/json';
+  if (currentUser?.email) opts.headers['X-User-Email'] = currentUser.email;
+  const res = await fetch(path, opts);
+  if (!res.ok) {
+    let data = {};
+    try { data = await res.json(); } catch {}
+    throw new Error(data.error || 'حدث خطأ');
+  }
+  const type = res.headers.get('content-type') || '';
+  return type.includes('application/json') ? res.json() : res.text();
+}
+async function loadMeta(){
+  meta = await api('/api/meta');
+  const branchSelect = document.getElementById('branch');
+  branchSelect.innerHTML = '<option value="">اختاري الفرع</option>' + meta.branches.map(b=>`<option>${b}</option>`).join('');
+  document.getElementById('filterBranch').innerHTML = '<option value="">كل الفروع</option>' + meta.branches.map(b=>`<option>${b}</option>`).join('');
+}
+
+function validateLoginEmail(){
+  const emailInput = document.getElementById('loginEmail');
+  const errorBox = document.getElementById('emailDomainError');
+  const email = emailInput.value.trim().toLowerCase();
+
+  if(!email){
+    errorBox.classList.add('hidden-page');
+    emailInput.classList.remove('border-red-500');
+    return true;
+  }
+
+  const allowed = email.endsWith('@hrsd.gov.sa') || email.endsWith('@edraakcm.sa');
+
+  if(!allowed){
+    errorBox.classList.remove('hidden-page');
+    emailInput.classList.add('border-red-500');
+    return false;
+  }
+
+  errorBox.classList.add('hidden-page');
+  emailInput.classList.remove('border-red-500');
+  return true;
+}
+
+
+async function login(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPass').value.trim();
+  try {
+    const data = await api('/api/login', { method:'POST', body: JSON.stringify({email,password}) });
+    currentUser = data.user;
+    localStorage.setItem('cq_user', JSON.stringify(currentUser));
+    await openApp();
+  } catch(e) { toast(e.message); }
+}
+async function openApp(){
+  document.getElementById('loginPage').classList.add('hidden-page');
+  document.getElementById('appPage').classList.remove('hidden-page');
+  document.getElementById('userBox').classList.remove('hidden-page');
+  document.getElementById('currentUser').textContent = currentUser.name;
+  
+  if(currentUser.role === 'employee' && !document.getElementById('btnEmployee')){
+    const nav = document.querySelector('.grid.md\\:grid-cols-5');
+    if(nav){
+      const btn = document.createElement('button');
+      btn.id='btnEmployee';
+      btn.className='card p-5 text-right hover:border-emerald-500';
+      btn.onclick=()=>showTab('employee');
+      btn.innerHTML='<h3 class="font-extrabold text-lg">موظف الجلسة</h3><p class="text-sm text-gray-500">صفحة الموظف</p>';
+      nav.appendChild(btn);
+    }
+  }
+
+const badge=document.getElementById('roleBadge');
+  badge.textContent = currentUser.role === 'admin' ? 'مدير' : 'موظف جودة';
+  badge.className = 'badge ' + (currentUser.role === 'admin' ? 'badge-admin' : 'badge-qa');
+  document.getElementById('btnDashboard').classList.toggle('hidden-page', currentUser.role !== 'admin');
+  document.getElementById('btnAccounts').classList.toggle('hidden-page', currentUser.role !== 'admin');
+  document.getElementById('btnForm').classList.toggle('hidden-page', currentUser.role !== 'qa');
+  document.getElementById('btnMy').classList.toggle('hidden-page', currentUser.role !== 'qa');
+  document.getElementById('btnEmployee').classList.toggle('hidden-page', currentUser.role !== 'employee');
+
+  if(currentUser.role === 'employee'){
+    document.getElementById('btnDashboard')?.classList.add('hidden-page');
+    document.getElementById('btnQualityDashboard')?.classList.add('hidden-page');
+    document.getElementById('btnAccounts')?.classList.add('hidden-page');
+    document.getElementById('btnForm')?.classList.add('hidden-page');
+    document.getElementById('btnMy')?.classList.add('hidden-page');
+  }
+  await loadMeta();
+  await buildEvaluatorFilter();
+  buildQuestions();
+  showTab(currentUser.role === 'admin' ? 'dashboard' : 'form');
+}
+function logout(){ localStorage.removeItem('cq_user'); location.reload(); }
+function showTab(tab){
+  if((tab==='dashboard' || tab==='accounts') && currentUser.role !== 'admin') { toast('هذه الصفحة للمدير فقط'); return; }
+  if((tab==='form' || tab==='my') && currentUser.role !== 'qa') { toast('هذه الصفحة لموظف الجودة فقط'); return; }
+  document.getElementById('formTab').classList.toggle('hidden-page', tab!=='form');
+  document.getElementById('dashboardTab').classList.toggle('hidden-page', tab!=='dashboard');
+  document.getElementById('myTab').classList.toggle('hidden-page', tab!=='my');
+  document.getElementById('accountsTab').classList.toggle('hidden-page', tab!=='accounts');
+  if(tab==='dashboard') renderDashboard();
+  if(tab==='my') renderMyEvaluations();
+  if(tab==='accounts') renderUsers();
+}
+async function buildEvaluatorFilter(){
+  if(currentUser.role !== 'admin') return;
+  try {
+    const data = await api('/api/users');
+    document.getElementById('filterEvaluator').innerHTML = '<option value="">كل موظفي الجودة</option>' + data.users.filter(u=>u.role==='qa').map(u=>`<option>${u.name}</option>`).join('');
+  } catch {}
+}
+function buildQuestions(){
+  const box=document.getElementById('questionsBox'); box.innerHTML='';
+  Object.entries(meta.questions).forEach(([section, qs])=>{
+    const wrap=document.createElement('div'); wrap.className='mb-5';
+    wrap.innerHTML=`<h3 class="text-lg font-extrabold text-emerald-800 mb-3">${section}</h3>`;
+    qs.forEach((q,i)=>{
+      const key=section+'__'+i;
+      const div=document.createElement('div'); div.className='q-card';
+      div.innerHTML=`<p class="font-bold text-gray-800 mb-3">${q}</p><div class="flex gap-2 flex-wrap"><button type="button" class="option" data-key="${key}" data-val="yes">نعم</button><button type="button" class="option" data-key="${key}" data-val="no">لا</button><button type="button" class="option" data-key="${key}" data-val="na">لا ينطبق</button></div>`;
+      wrap.appendChild(div);
+    });
+    box.appendChild(wrap);
+  });
+  document.querySelectorAll('.option').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const key=btn.dataset.key, val=btn.dataset.val; answers[key]=val;
+      document.querySelectorAll(`.option[data-key="${key}"]`).forEach(b=>b.classList.remove('active-yes','active-no','active-na'));
+      btn.classList.add(val==='yes'?'active-yes':val==='no'?'active-no':'active-na');
+    });
+  });
+}
+function scoreEvaluation(){
+  let yes=0,total=0;
+  Object.values(answers).forEach(v=>{ if(v==='na') return; total++; if(v==='yes') yes++; });
+  return total ? Math.round((yes/total)*100) : 0;
+}
+async function saveEvaluation(){
+  const branch=document.getElementById('branch').value;
+  const employeeName=document.getElementById('employeeName').value.trim();
+  const employeeEmail=document.getElementById('employeeEmail').value.trim();
+  if(!branch || !employeeName || !employeeEmail){ toast('عبّي الفرع واسم الموظف وبريده'); return; }
+  const totalQuestions = Object.values(meta.questions).flat().length;
+  if(Object.keys(answers).length < totalQuestions){ toast('جاوبي على كل الأسئلة'); return; }
+  const body = {
+    branch,
+    employeeName,
+    employeeEmail,
+    callLink:document.getElementById('callLink').value.trim(),
+    score:scoreEvaluation(),
+    notes:document.getElementById('notes').value.trim(),
+    answers
+  };
+  try {
+    await api('/api/evaluations', { method:'POST', body: JSON.stringify(body) });
+    toast('تم حفظ التقييم بنجاح');
+    resetForm();
+    showTab(currentUser.role==='admin'?'dashboard':'my');
+  } catch(e) { toast(e.message); }
+}
+function resetForm(){
+  answers={};
+  ['branch','employeeName','employeeEmail','callLink','notes'].forEach(id=>document.getElementById(id).value='');
+  buildQuestions();
+}
+function average(arr){ return arr.length ? Math.round(arr.reduce((s,v)=>s+Number(v||0),0)/arr.length) : 0; }
+function groupAverage(data,key){
+  const groups={};
+  data.forEach(x=>{ if(!groups[x[key]]) groups[x[key]]=[]; groups[x[key]].push(x.score); });
+  return Object.entries(groups).map(([name,arr])=>({name,avg:average(arr),count:arr.length})).sort((a,b)=>b.avg-a.avg);
+}
+function renderMiniBars(elId, rows){
+  const el=document.getElementById(elId);
+  if(!rows.length){ el.innerHTML='<p class="text-sm text-gray-400">لا توجد بيانات</p>'; return; }
+  el.innerHTML=rows.slice(0,8).map(r=>`<div><div class="flex justify-between text-sm font-bold mb-1"><span>${r.name}</span><span>${r.avg}% - ${r.count} تقييم</span></div><div class="bar"><span style="width:${r.avg}%"></span></div></div>`).join('');
+}
+async function getEvaluations(){
+  const data = await api('/api/evaluations');
+  return data.evaluations || [];
+}
+async function renderDashboard(){
+  if(currentUser.role !== 'admin') return;
+  let data = await getEvaluations();
+  const branch=document.getElementById('filterBranch').value;
+  const evaluator=document.getElementById('filterEvaluator').value;
+  if(branch) data=data.filter(x=>x.branch===branch);
+  if(evaluator) data=data.filter(x=>x.evaluator===evaluator);
+
+  const sum = key => data.reduce((s,x)=>s+Number(x[key] || 0),0);
+  const avgKey = key => average(data.map(x=>Number(x[key] || 0)).filter(v=>!isNaN(v)));
+  const incoming = sum('incomingSessions');
+  const answered = sum('answeredSessions');
+  const missed = Math.max(0, incoming - answered);
+  const missedRate = incoming ? Math.round((missed / incoming) * 100) : 0;
+  const responseEfficiency = incoming ? Math.round((answered / incoming) * 100) : 0;
+  const serviceQuality = average(data.map(x=>x.score));
+  const speedResponse = Math.max(0, Math.min(100, Math.round(100 - avgKey('avgResponseTime'))));
+  const employeeEfficiency = Math.round((serviceQuality + avgKey('resolutionRate')) / 2) || 0;
+  const recommendRate = Math.max(0, Math.min(100, Math.round((avgKey('nps') + 100) / 2)));
+
+  document.getElementById('kpiIncomingSessions').textContent=incoming;
+  document.getElementById('kpiAnsweredSessions').textContent=answered;
+  document.getElementById('kpiMissedRate').textContent=missedRate+'%';
+  document.getElementById('kpiAvgResponseTime').textContent=avgKey('avgResponseTime')+' ث';
+  document.getElementById('kpiAvgSessionTime').textContent=avgKey('avgSessionTime')+' د';
+  document.getElementById('kpiCustomerSatisfaction').textContent=avgKey('customerSatisfaction')+'%';
+  document.getElementById('kpiNps').textContent=avgKey('nps');
+  document.getElementById('kpiBranchPressure').textContent=avgKey('branchPressure')+'%';
+  document.getElementById('kpiResponseEfficiency').textContent=responseEfficiency+'%';
+  document.getElementById('avgScore').textContent=serviceQuality+'%';
+  document.getElementById('kpiSpeedResponse').textContent=speedResponse+'%';
+  document.getElementById('kpiEmployeeEfficiency').textContent=employeeEfficiency+'%';
+  document.getElementById('kpiRecommendRate').textContent=recommendRate+'%';
+  document.getElementById('kpiDirectExperience').textContent=avgKey('directExperienceRating')+'%';
+  document.getElementById('kpiHandledCalls').textContent=sum('handledCalls');
+  document.getElementById('kpiResolutionRate').textContent=avgKey('resolutionRate')+'%';
+  document.getElementById('kpiAbandonmentRate').textContent=avgKey('abandonmentRate')+'%';
+  document.getElementById('totalCount').textContent=data.length;
+
+  const sorted=data.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  document.getElementById('lastEval').textContent=sorted.length?sorted[0].dateText:'-';
+  const branchRows=groupAverage(data,'branch');
+  document.getElementById('bestBranch').textContent=branchRows.length?`${branchRows[0].name} (${branchRows[0].avg}%)`:'-';
+
+  const challenges = data.map(x=>x.operationalChallenges).filter(Boolean).slice(-5).reverse();
+  const recommendations = data.map(x=>x.recommendations).filter(Boolean).slice(-5).reverse();
+  document.getElementById('kpiChallenges').innerHTML = challenges.length ? challenges.map(x=>`<div class="p-3 rounded-xl bg-gray-50 border">${x}</div>`).join('') : '<p class="text-gray-400">لا توجد تحديات مدخلة</p>';
+  document.getElementById('kpiRecommendations').innerHTML = recommendations.length ? recommendations.map(x=>`<div class="p-3 rounded-xl bg-gray-50 border">${x}</div>`).join('') : '<p class="text-gray-400">لا توجد توصيات مدخلة</p>';
+
+  renderMiniBars('branchPerformance', branchRows);
+  renderMiniBars('qaPerformance', groupAverage(data,'evaluator'));
+
+  document.getElementById('resultsBody').innerHTML=data.slice().reverse().map(x=>`<tr><td class="p-3 border">${x.dateText}</td><td class="p-3 border">${x.evaluator}</td><td class="p-3 border">${x.branch}</td><td class="p-3 border">${x.employeeName}</td><td class="p-3 border">${x.employeeEmail}</td><td class="p-3 border">${x.incomingSessions || 0}</td><td class="p-3 border">${x.answeredSessions || 0}</td><td class="p-3 border">${x.resolutionRate || 0}%</td><td class="p-3 border font-extrabold">${x.score}%</td><td class="p-3 border">${x.notes || '-'}</td></tr>`).join('');
+}
+async function renderMyEvaluations(){
+  const data = await getEvaluations();
+  document.getElementById('myCount').textContent=data.length;
+  document.getElementById('myAvg').textContent=average(data.map(x=>x.score))+'%';
+  const sorted=data.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  document.getElementById('myLast').textContent=sorted.length?sorted[0].dateText:'-';
+  document.getElementById('myResultsBody').innerHTML=data.slice().reverse().map(x=>`<tr><td class="p-3 border">${x.dateText}</td><td class="p-3 border">${x.branch}</td><td class="p-3 border">${x.employeeName}</td><td class="p-3 border font-extrabold">${x.score}%</td><td class="p-3 border">${x.notes || '-'}</td></tr>`).join('');
+}
+function clearFilters(){ document.getElementById('filterBranch').value=''; document.getElementById('filterEvaluator').value=''; renderDashboard(); }
+async function exportCSV(){
+  try {
+    const csv = await api('/api/export');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='call-quality-results.csv'; a.click(); URL.revokeObjectURL(url);
+  } catch(e){ toast(e.message); }
+}
+
+
+let allUsersCache = [];
+
+
+
+
+function toggleOtherService(){
+  const type = document.getElementById('serviceType')?.value;
+  const box = document.getElementById('otherServiceBox');
+  if(box) box.classList.toggle('hidden-page', type !== 'أخرى');
+}
+
+function submitSessionForm(){
+  toast('تم إرسال نموذج موظف الجلسة');
+}
+
+function validateAccountEmail(inputId, errorId){
+  const input = document.getElementById(inputId);
+  const error = document.getElementById(errorId);
+  const email = input.value.trim().toLowerCase();
+
+  if(!email){
+    input.classList.remove('border-red-500');
+    error.classList.add('hidden-page');
+    return false;
+  }
+
+  const valid = email.endsWith('@hrsd.gov.sa') || email.endsWith('@edraakcm.sa');
+
+  if(!valid){
+    input.classList.add('border-red-500');
+    error.classList.remove('hidden-page');
+    return false;
+  }
+
+  input.classList.remove('border-red-500');
+  error.classList.add('hidden-page');
+  return true;
+}
+
+
+function roleLabel(role){
+  if(role === 'admin') return 'مدير النظام';
+  if(role === 'supervisor') return 'مشرف جودة';
+  if(role === 'employee') return 'موظف جلسة';
+  return 'موظف جودة';
+}
+
+async function renderUsers(){
+  if(currentUser.role !== 'admin') return;
+  try {
+    const data = await api('/api/users');
+    allUsersCache = data.users || [];
+    document.getElementById('usersBody').innerHTML = allUsersCache.map(u=>`
+      <tr>
+        <td class="p-3 border">${u.name}</td>
+        <td class="p-3 border" dir="ltr">${u.email}</td>
+        <td class="p-3 border">${roleLabel(u.role)}</td>
+        <td class="p-3 border">${u.disabled ? '<span class="text-red-600 font-bold">معطل</span>' : '<span class="text-emerald-700 font-bold">مفعل</span>'}</td>
+        <td class="p-3 border">
+          <div class="flex gap-2 flex-wrap">
+            <button onclick="openEditUser('${u.email}')" class="btn bg-gray-100 text-gray-700 text-xs">تعديل</button>
+            <button onclick="toggleUserDisabled('${u.email}')" class="btn bg-yellow-100 text-yellow-700 text-xs">${u.disabled ? 'تفعيل' : 'تعطيل'}</button>
+            <button onclick="deleteUser('${u.email}')" class="btn bg-red-100 text-red-700 text-xs">حذف</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  } catch(e) { toast(e.message); }
+}
+
+async function addUser(){
+  if(currentUser.role !== 'admin') return;
+  const name = document.getElementById('newUserName').value.trim();
+  const email = document.getElementById('newUserEmail').value.trim().toLowerCase();
+  const password = document.getElementById('newUserPassword').value.trim();
+  const role = document.getElementById('newUserRole').value;
+  if(!name || !email || !password) { toast('عبّي الاسم والبريد وكلمة المرور'); return; }
+  if(!validateAccountEmail('newUserEmail', 'newUserEmailError')) return;
+
+  try {
+    const result = await api('/api/users', { method:'POST', body: JSON.stringify({ name, email, password, role }) });
+    toast(result.emailStatus && result.emailStatus.sent ? 'تمت إضافة الحساب وإرسال البريد' : 'تمت إضافة الحساب، لكن لم يتم إرسال البريد');
+    document.getElementById('newUserName').value='';
+    document.getElementById('newUserEmail').value='';
+    document.getElementById('newUserPassword').value='';
+    document.getElementById('newUserRole').value='employee';
+    await buildEvaluatorFilter();
+    await renderUsers();
+  } catch(e) { toast(e.message); }
+}
+
+function openEditUser(email){
+  const u = allUsersCache.find(x => String(x.email).toLowerCase() === String(email).toLowerCase());
+  if(!u) return toast('الحساب غير موجود');
+  document.getElementById('editOldEmail').value = u.email;
+  document.getElementById('editUserName').value = u.name;
+  document.getElementById('editUserEmail').value = u.email;
+  document.getElementById('editUserPassword').value = '';
+  document.getElementById('editUserRole').value = u.role;
+  document.getElementById('editUserDisabled').checked = !!u.disabled;
+  document.getElementById('editUserModal').classList.remove('hidden-page');
+}
+
+function closeEditUser(){
+  document.getElementById('editUserModal').classList.add('hidden-page');
+}
+
+async function saveEditUser(){
+  const oldEmail = document.getElementById('editOldEmail').value;
+
+  if(!body.name || !body.email) return toast('الاسم والبريد مطلوبين');
+  if(!validateAccountEmail('editUserEmail', 'editUserEmailError')) return;
+  try {
+    await api('/api/users/' + encodeURIComponent(oldEmail), { method:'PUT', body: JSON.stringify(body) });
+    toast('تم تعديل الحساب');
+    closeEditUser();
+    await buildEvaluatorFilter();
+    await renderUsers();
+  } catch(e) { toast(e.message); }
+}
+
+async function toggleUserDisabled(email){
+  const u = allUsersCache.find(x => String(x.email).toLowerCase() === String(email).toLowerCase());
+  if(!u) return;
+  try {
+    await api('/api/users/' + encodeURIComponent(email), { method:'PUT', body: JSON.stringify({
+      name: u.name,
+      email: u.email,
+      password: 'KEEP_OLD_PASSWORD',
+      role: u.role,
+      disabled: !u.disabled
+    }) });
+    toast(!u.disabled ? 'تم تعطيل الحساب' : 'تم تفعيل الحساب');
+    await renderUsers();
+  } catch(e) { toast(e.message); }
+}
+
+async function deleteUser(email){
+  if(!confirm('متأكدة من حذف هذا الحساب؟')) return;
+  try {
+    await api('/api/users/' + encodeURIComponent(email), { method:'DELETE' });
+    toast('تم حذف الحساب');
+    await buildEvaluatorFilter();
+    await renderUsers();
+  } catch(e) { toast(e.message); }
+}
+
+window.onload=async ()=>{ if(currentUser) await openApp(); };
+</script>
 </body>
 </html>
